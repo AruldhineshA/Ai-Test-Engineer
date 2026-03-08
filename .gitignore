@@ -1,0 +1,38 @@
+# ── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual Environment ──────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Environment Variables (SECRETS — never commit!) ──
+.env
+
+# ── IDE ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Uploads & Exports (user data) ───────────────────
+uploads/
+exports/
+
+# ── Database ─────────────────────────────────────────
+*.db
+*.sqlite3
+
+# ── OS Files ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Testing ──────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
