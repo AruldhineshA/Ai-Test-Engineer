@@ -18,15 +18,32 @@ AI-powered tool with 3 core methods:
 - **Containerization:** Docker + docker-compose
 - **Future:** Redis (cache + task queue), Celery (background workers), Playwright (browser automation), pgvector (vector search)
 
-## Architecture (7 Layers)
+## Monorepo Structure
 ```
-Layer 1: app/main.py              → FastAPI entry point
-Layer 2: app/api/v1/              → Route endpoints
-Layer 3: app/schemas/             → Pydantic validation
-Layer 4: app/services/            → Business logic
-Layer 5: app/ai/                  → AI engine (LLM integration)
-Layer 6: app/models/              → SQLAlchemy ORM models
-Layer 7: app/db/repositories/     → Data access (CRUD)
+D:\Ai-Test-Engineer\
+├── client/                        → React + Vite frontend
+│   ├── src/
+│   ├── package.json
+│   └── Dockerfile
+├── server/                        → FastAPI backend
+│   ├── app/                       → Application code (7 layers below)
+│   ├── alembic/                   → Database migrations
+│   ├── tests/
+│   ├── requirements.txt
+│   └── Dockerfile
+├── docker-compose.yml             → Orchestrates all services
+└── .gitignore
+```
+
+## Backend Architecture (7 Layers — inside server/app/)
+```
+Layer 1: server/app/main.py              → FastAPI entry point
+Layer 2: server/app/api/v1/              → Route endpoints
+Layer 3: server/app/schemas/             → Pydantic validation
+Layer 4: server/app/services/            → Business logic
+Layer 5: server/app/ai/                  → AI engine (LLM integration)
+Layer 6: server/app/models/              → SQLAlchemy ORM models
+Layer 7: server/app/db/repositories/     → Data access (CRUD)
 ```
 
 ## Database Schema
@@ -75,21 +92,23 @@ Layer 7: app/db/repositories/     → Data access (CRUD)
 - Frontend (React/Next.js)
 
 ## Commands
-- **Run server:** `uvicorn app.main:app --reload`
+- **Run server:** `cd server && uvicorn app.main:app --reload`
+- **Run client:** `cd client && npm run dev`
 - **Run with Docker:** `docker-compose up`
-- **Run migrations:** `alembic upgrade head`
-- **Run tests:** `pytest tests/`
-- **Lint:** `ruff check app/`
-- **Format:** `ruff format app/`
+- **Run migrations:** `cd server && alembic upgrade head`
+- **Run tests:** `cd server && pytest tests/`
+- **Lint:** `cd server && ruff check app/`
+- **Format:** `cd server && ruff format app/`
 - **Swagger docs:** http://localhost:8000/docs
 
 ## File Storage
-- Uploads: `uploads/{project_id}/{filename}`
-- Exports: `exports/`
+- Uploads: `server/uploads/{project_id}/{filename}`
+- Exports: `server/exports/`
 
 ## Configuration
-- Settings: `app/config.py` (reads from `.env`)
-- Template: `.env.example`
+- Server settings: `server/app/config.py` (reads from `server/.env`)
+- Server template: `server/.env.example`
+- Client env: `client/.env`
 - DB URL: `postgresql+asyncpg://postgres:postgres@localhost:5432/ai_test_engineer`
 - LLM Provider: Set LLM_PROVIDER in .env (gemini/groq/ollama)
 

@@ -1,29 +1,24 @@
 services:
-  # ── FastAPI Application ──────────────────────────────
-  app:
-    build: .
+  # ── FastAPI Backend ────────────────────────────────────
+  server:
+    build: ./server
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ./server/.env
     volumes:
-      - ./uploads:/app/uploads
-      - ./exports:/app/exports
-    depends_on:
-      - db
+      - ./server/uploads:/app/uploads
+      - ./server/exports:/app/exports
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # ── PostgreSQL Database ──────────────────────────────
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ai_test_engineer
+  # ── React Frontend ─────────────────────────────────────
+  client:
+    build: ./client
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - "5173:5173"
+    env_file:
+      - ./client/.env
+    depends_on:
+      - server

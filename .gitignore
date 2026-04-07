@@ -1,4 +1,4 @@
-# ── Python ────────────────────────────────────────────
+# ── Python (server/) ──────────────────────────────────
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -10,6 +10,9 @@ build/
 venv/
 .venv/
 env/
+
+# ── Node (client/) ───────────────────────────────────
+node_modules/
 
 # ── Environment Variables (SECRETS — never commit!) ──
 .env

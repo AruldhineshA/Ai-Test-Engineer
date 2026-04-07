@@ -377,7 +377,7 @@ GET /api/v1/testcases/?project_id=1&case_type=edge&status=draft
 | **URL** | `/api/v1/testcases/{testcase_id}` |
 | **Status** | IMPLEMENTED |
 | **Description** | Update, approve, or reject a test case |
-
+![alt text](image.png)
 **Example:** `PUT /api/v1/testcases/1`
 
 **Request Body (approve):**
