@@ -8,7 +8,7 @@ LEARN:
 - BackgroundTasks: Run slow tasks without blocking the response
 """
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
@@ -16,6 +16,16 @@ from app.schemas.document import DocumentResponse, DocumentAnalyzeResponse
 from app.services.document_service import DocumentService
 
 router = APIRouter()
+
+
+@router.get("/", response_model=list[DocumentResponse])
+async def list_documents(
+    project_id: int = Query(..., description="Filter documents by project ID"),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all documents for a project."""
+    service = DocumentService(db)
+    return await service.list_by_project(project_id)
 
 
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)

@@ -18,6 +18,7 @@ class ScriptType(str, Enum):
 class ScriptLanguage(str, Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
+    YAML = "yaml"  # Used for Artillery configs
 
 
 class ScriptGenerateRequest(BaseModel):

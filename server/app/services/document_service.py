@@ -74,6 +74,10 @@ class DocumentService:
         """Get a document by ID."""
         return await self.repo.get_by_id(document_id)
 
+    async def list_by_project(self, project_id: int) -> list[Document]:
+        """List all documents for a project."""
+        return await self.repo.get_by_project(project_id)
+
     async def analyze(self, document_id: int) -> DocumentAnalyzeResponse:
         """
         Analyze a document using AI.

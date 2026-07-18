@@ -1,0 +1,51 @@
+═══════════════════════════════════════════════════════════
+LOGIN MODULE — SOFTWARE REQUIREMENTS SPECIFICATION
+Version 1.0
+═══════════════════════════════════════════════════════════
+
+1. OVERVIEW
+The login module enables registered users to authenticate
+into the system using their email address and password.
+
+2. FUNCTIONAL REQUIREMENTS
+
+2.1 Login Form
+- The login page must display two fields: Email and Password
+- Both fields are mandatory
+- Email field must validate format (must contain @ and a domain)
+- Password field must mask input characters (show as dots)
+- A "Show Password" toggle button must be available
+- A "Remember Me" checkbox must persist the user session for 30 days
+- A "Forgot Password" link must redirect to password reset page
+
+2.2 Authentication Rules
+- Email must exist in the users database
+- Password must match the stored hashed password
+- Account must be active (is_active = true)
+- After 5 consecutive failed attempts, the account must be locked
+  for 15 minutes
+- Successful login redirects to the dashboard
+- Failed login displays error: "Invalid email or password"
+
+2.3 Session Management
+- On successful login, a JWT token is issued
+- Token expires after 60 minutes of inactivity
+- Token must be stored in browser localStorage
+- Logout button must clear the token and redirect to login page
+
+3. NON-FUNCTIONAL REQUIREMENTS
+- Login response time must be under 2 seconds
+- Password must be hashed using bcrypt before storage
+- All API calls must use HTTPS
+- Maximum 100 concurrent login requests per minute
+
+4. EDGE CASES
+- Empty email or password
+- Email with leading/trailing whitespace
+- SQL injection attempts in email field
+- Password longer than 72 characters
+- Account locked due to too many failed attempts
+- Expired token usage
+- Network failure during login
+
+═══════════════════════════════════════════════════════════

@@ -20,8 +20,9 @@ SUPPORTED PROVIDERS:
 import json
 import logging
 
-import google.generativeai as genai
 import httpx
+from google import genai
+from google.genai import types as genai_types
 from groq import AsyncGroq
 
 from app.config import settings
@@ -46,9 +47,12 @@ class LLMClient:
 
     def _setup_providers(self):
         """Initialize API clients based on configured provider."""
-        # Gemini setup
-        if settings.GEMINI_API_KEY:
-            genai.configure(api_key=settings.GEMINI_API_KEY)
+        # Gemini setup — new google-genai SDK with native async support
+        self._gemini_client = (
+            genai.Client(api_key=settings.GEMINI_API_KEY)
+            if settings.GEMINI_API_KEY
+            else None
+        )
 
         # Groq setup (client created per-call for async safety)
         self._groq_api_key = settings.GROQ_API_KEY
@@ -57,13 +61,21 @@ class LLMClient:
         self._ollama_base_url = settings.OLLAMA_BASE_URL
         self._ollama_model = settings.OLLAMA_MODEL
 
-    async def generate(self, prompt: str, system_prompt: str = "") -> str:
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        json_mode: bool = True,
+    ) -> str:
         """
         Send a prompt to the configured LLM and get a response.
 
         Args:
             prompt: The user/task prompt
             system_prompt: Instructions for how the LLM should behave
+            json_mode: If True, force JSON output (default — used by Phase 1
+                       analyze/generate). If False, return raw text/code
+                       (used by Phase 2 script generation).
 
         Returns:
             The LLM's text response
@@ -74,7 +86,7 @@ class LLMClient:
         """
         try:
             if self.provider == "gemini":
-                return await self._call_gemini(prompt, system_prompt)
+                return await self._call_gemini(prompt, system_prompt, json_mode)
             elif self.provider == "groq":
                 return await self._call_groq(prompt, system_prompt)
             elif self.provider == "ollama":
@@ -89,21 +101,42 @@ class LLMClient:
 
     # ── Gemini (Google) ────────────────────────────────────────────
 
-    async def _call_gemini(self, prompt: str, system_prompt: str) -> str:
+    async def _call_gemini(
+        self,
+        prompt: str,
+        system_prompt: str,
+        json_mode: bool = True,
+    ) -> str:
         """
-        Call Google Gemini API.
+        Call Google Gemini API via the new google-genai SDK.
 
-        Uses google-generativeai SDK.
+        Speed optimizations applied:
+        1. Native async (client.aio) — no thread executor needed
+        2. thinking_budget=0 — disables Gemini 2.5 Flash "thinking" (2-4x faster)
+        3. response_mime_type='application/json' (when json_mode=True) — forces clean JSON
+        4. Lower temperature — more deterministic, fewer retries
+
         Model: gemini-2.5-flash (configurable via .env)
         Free tier: ~10 RPM, ~250 RPD
         """
-        model = genai.GenerativeModel(
-            model_name=settings.GEMINI_MODEL,
-            system_instruction=system_prompt if system_prompt else None,
-        )
+        if self._gemini_client is None:
+            raise RuntimeError("GEMINI_API_KEY not configured in .env")
 
-        # Gemini SDK's generate_content is sync — run in executor for async
-        response = await self._run_sync(model.generate_content, prompt)
+        config_kwargs = {
+            "system_instruction": system_prompt or None,
+            "temperature": 0.3,
+            "thinking_config": genai_types.ThinkingConfig(thinking_budget=0),
+        }
+        if json_mode:
+            config_kwargs["response_mime_type"] = "application/json"
+
+        config = genai_types.GenerateContentConfig(**config_kwargs)
+
+        response = await self._gemini_client.aio.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+            config=config,
+        )
 
         return response.text
 
@@ -161,15 +194,6 @@ class LLMClient:
             result = response.json()
 
         return result.get("response", "")
-
-    # ── Helper: Run sync functions in async context ────────────────
-
-    @staticmethod
-    async def _run_sync(func, *args, **kwargs):
-        """Run a synchronous function in a thread executor (non-blocking)."""
-        import asyncio
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
     # ── Utility: Parse JSON from LLM response ─────────────────────
 

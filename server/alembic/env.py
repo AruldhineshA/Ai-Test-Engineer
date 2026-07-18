@@ -35,7 +35,8 @@ target_metadata = Base.metadata
 
 # Override DB URL from our settings (convert async URL to sync for migrations)
 sync_url = settings.DATABASE_URL.replace("+asyncpg", "")
-config.set_main_option("sqlalchemy.url", sync_url)
+# Escape '%' for configparser — otherwise it tries to interpolate '%40' (URL-encoded '@' in passwords)
+config.set_main_option("sqlalchemy.url", sync_url.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:

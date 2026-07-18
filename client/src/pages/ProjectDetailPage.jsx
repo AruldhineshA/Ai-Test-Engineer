@@ -3,15 +3,16 @@
  * This is the core Phase 1 workflow page.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { Upload, FileText, Sparkles, ClipboardCheck, Download } from "lucide-react";
+import { Upload, FileText, Sparkles, ClipboardCheck, Download, Lightbulb, CheckCircle2 } from "lucide-react";
 import { Card, CardBody, CardHeader } from "../components/common/Card";
 import { Button } from "../components/common/Button";
 import { StatusBadge } from "../components/common/StatusBadge";
 import { EmptyState } from "../components/common/EmptyState";
 import { Loader } from "../components/common/Loader";
 import { Modal } from "../components/common/Modal";
+import { ScriptSection } from "../components/scripts/ScriptSection";
 import { formatDate, truncateText } from "../utils/formatters";
 import api from "../utils/api";
 import toast from "react-hot-toast";
@@ -24,6 +25,7 @@ export function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showTestCase, setShowTestCase] = useState(null);
+  const fileInputRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -62,6 +64,7 @@ export function ProjectDetailPage() {
       toast.error(err.response?.data?.detail || "Upload failed");
     } finally {
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -132,17 +135,60 @@ export function ProjectDetailPage() {
           <p className="text-gray-500 mt-1">{project.description || "No description"}</p>
         </div>
         <div className="flex gap-3">
-          <label>
-            <input type="file" accept=".pdf,.docx,.md,.txt" onChange={handleUpload} className="hidden" />
-            <Button icon={Upload} loading={uploading} onClick={() => {}} className="cursor-pointer" as="span">
-              Upload Document
-            </Button>
-          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.docx,.md,.txt"
+            onChange={handleUpload}
+            className="hidden"
+          />
+          <Button
+            icon={Upload}
+            loading={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Upload Document
+          </Button>
           {testCases.length > 0 && (
             <Button variant="outline" icon={Download} onClick={handleExport}>
               Export CSV
             </Button>
           )}
+        </div>
+      </div>
+
+      {/* Upload Guidance — what makes a good document for AI */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-start gap-3">
+          <Lightbulb className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-amber-900">
+              Tips for accurate AI test cases
+            </h3>
+            <p className="text-xs text-amber-800 mt-1">
+              For best results, your document (PDF, DOCX, MD, TXT) should clearly describe:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 mt-3">
+              {[
+                "Feature overview (what the module does)",
+                "Functional requirements (what users can do)",
+                "User flows (step-by-step journeys)",
+                "Validation rules (field formats, lengths, types)",
+                "Error messages and failure scenarios",
+                "Edge cases (boundary values, limits)",
+                "User roles and permissions (if any)",
+                "Non-functional requirements (performance, security)",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <span className="text-xs text-amber-900">{item}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-amber-700 mt-3 italic">
+              The more specific your document, the more accurate the generated test cases. Short or vague docs produce generic tests.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -279,6 +325,9 @@ export function ProjectDetailPage() {
               <StatusBadge status={showTestCase.case_type} />
               <StatusBadge status={showTestCase.status} />
             </div>
+
+            {/* Phase 2 — Script generation (Playwright + Artillery) */}
+            <ScriptSection testCaseId={showTestCase.id} />
           </div>
         )}
       </Modal>
